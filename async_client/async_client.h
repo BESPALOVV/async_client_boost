@@ -11,14 +11,18 @@
 
 using namespace boost::asio;
 
+class HandleClient;
+
 class a_client:public boost::enable_shared_from_this<a_client>, boost::noncopyable
 {
 public:
-	a_client(io_context& context,const std::string username):sock_(context),username_(username),timer_(context){}
+	explicit a_client(io_context& context,const std::string username):sock_(context),username_(username),timer_(context){}
 
 	void Start(ip::tcp::endpoint& ep);
 	
 private:
+
+	void stop();
 
 	void on_connect(const boost::system::error_code& ec);
 
@@ -26,12 +30,9 @@ private:
 
 	void on_read(const boost::system::error_code& ec, std::size_t bytes);
 
-
 	void do_write(const std::string& msg);
 
 	void do_read();
-
-	size_t read_completion(const boost::system::error_code& ec, size_t bytes);
 
 	void postpone_ping();
 
@@ -43,6 +44,7 @@ private:
 
 	void do_ask_clients();
 
+	inline void ErrorHandle(const boost::system::error_code& ec);
 
 	
 

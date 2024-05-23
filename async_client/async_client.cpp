@@ -1,14 +1,21 @@
-﻿// async_client.cpp: определяет точку входа для приложения.
-//
-
+﻿
 #include "async_client.h"
 
 
 using namespace std;
 
+class HandleClient;
+
 void a_client::Start(ip::tcp::endpoint& ep)
 {
 	sock_.async_connect(ep, bind(&a_client::on_connect, shared_from_this(), _1));
+}
+
+void a_client::stop()
+{
+	sock_.close();
+
+	sock_.cancel();
 }
 
 void a_client::on_connect(const boost::system::error_code& ec)
@@ -37,14 +44,7 @@ void a_client::do_write(const std::string& msg)
 
 void a_client::on_write(const boost::system::error_code& ec, size_t bytes)
 {
-	if (ec) { 
-		std::cout << "Write Error::" << ec.what() << std::endl;
-
-		started_ = false;
-
-		return;
-		}
-	if (!started_) { return; }
+	ErrorHandle(ec);
 
 	buffer_.consume(bytes);
 
@@ -53,35 +53,12 @@ void a_client::on_write(const boost::system::error_code& ec, size_t bytes)
 
 void a_client::do_read()
 {
-	
 	boost::asio::async_read_until(sock_, buffer_, '\n', boost::bind(&a_client::on_read,this, _1, _2));
-
-
 }
-/*
-size_t a_client::read_completion(const boost::system::error_code& ec, size_t bytes)
-{
-	if (ec) {
-		std::cout << "Write Error::" << ec.what() << std::endl;
-		started_ = false;
-	}
-	if (!started_) { return 0; }
-	
-	bool answ = std::find(read_buff, read_buff + bytes, '\n') < read_buff + bytes;
-	
-	return answ ? 0 : 1;
-}*/
 
 void a_client::on_read(const boost::system::error_code& ec, std::size_t bytes)
 {
-	if(ec) { 
-		std::cout << "Read Error::" << ec.what() << std::endl;
-
-		started_ = false;
-
-			return;
-	}
-	if (!started_) { return; }
+	ErrorHandle(ec);
 
 	std::istream in(&buffer_);
 
@@ -141,5 +118,26 @@ void a_client::on_client(const std::string& msg)
 void a_client::on_login()
 {
 	do_ask_clients();
+}
+
+
+inline void a_client::ErrorHandle(const boost::system::error_code& ec)
+{
+	if (!ec)
+	{
+		return;
+	}
+	else if (ec.value() == 10054||ec.value()==10053)
+	{
+		std::cout<<username_<<"::" << "Connection Closed(Error10054/53)" << std::endl;
+
+		stop();
+	}
+	else
+	{
+		std::cout << "Unknown error: " << ec.what() << endl << ec.message() << endl;
+
+		stop();
+	}
 }
 

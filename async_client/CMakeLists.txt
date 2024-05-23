@@ -1,5 +1,5 @@
 ﻿
-add_executable (async_client "async_client.cpp" "async_client.h" "main.cpp")
+add_executable (async_client "async_client.cpp" "async_client.h" "HandleClient.h" "HandleClient.cpp" "main.cpp")
 
 find_package(Boost REQUIRED)
 
