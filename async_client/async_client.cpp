@@ -13,9 +13,21 @@ void a_client::Start(ip::tcp::endpoint& ep)
 
 void a_client::stop()
 {
-	sock_.close();
+	boost::system::error_code ec;
 
-	sock_.cancel();
+		sock_.close(ec);
+
+		sock_.cancel(ec);
+	
+			if (ec.value()==10009)
+			{
+				return;
+			}
+			else
+			{
+				std::cout << ec.what() << endl << ec.message() << endl;
+			}
+
 }
 
 void a_client::on_connect(const boost::system::error_code& ec)
@@ -83,7 +95,7 @@ void a_client::on_ping(const std::string& msg)
 
 	in >> answ >> answ;
 
-	if (answ == "client_list_changed")
+	if (answ == "clients_list_changed")
 	{
 		do_ask_clients();
 	}
